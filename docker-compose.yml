@@ -1,0 +1,121 @@
+name: plandelta
+
+services:
+  api:
+    image: plandelta-api:local
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    command: ["node", "apps/api/dist/main.js"]
+    env_file: .env.local
+    environment:
+      AGENT_ENABLED: "true"
+      AGENT_SERVICE_URL: http://agent:8100
+      LOCAL_STORAGE_ROOT: /data
+      VISION_SERVICE_URL: http://vision:8000
+    ports:
+      - "4000:4000"
+    volumes:
+      - plandelta-data:/data
+    depends_on:
+      agent:
+        condition: service_healthy
+      vision:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:4000/health/ready').then(r=>{if(!r.ok)process.exit(1)})",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  agent:
+    image: plandelta-agent:local
+    build:
+      context: apps/agent
+      dockerfile: Dockerfile
+    env_file: .env.local
+    environment:
+      HF_HOME: /home/plandelta/.cache/fastembed/huggingface
+      HF_HUB_DISABLE_XET: "1"
+      XDG_CACHE_HOME: /home/plandelta/.cache/fastembed
+    expose:
+      - "8100"
+    volumes:
+      - plandelta-data:/data
+      - plandelta-agent-models:/home/plandelta/.cache/fastembed
+    mem_limit: 768m
+    cpus: 0.75
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8100/health/ready')",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  worker:
+    image: plandelta-api:local
+    pull_policy: never
+    command: ["node", "apps/api/dist/worker.js"]
+    env_file: .env.local
+    environment:
+      AGENT_ENABLED: "true"
+      AGENT_SERVICE_URL: http://agent:8100
+      LOCAL_STORAGE_ROOT: /data
+      VISION_SERVICE_URL: http://vision:8000
+    volumes:
+      - plandelta-data:/data
+    depends_on:
+      api:
+        condition: service_healthy
+      agent:
+        condition: service_healthy
+    restart: unless-stopped
+
+  vision:
+    image: plandelta-vision:local
+    build:
+      context: apps/vision
+      dockerfile: Dockerfile
+    env_file: .env.local
+    environment:
+      VISION_SHARED_ROOT: /data
+      ONNX_MODEL_PATH: /app/models/changed-region-classifier.onnx
+    ports:
+      - "8000:8000"
+    volumes:
+      - plandelta-data:/data
+      - plandelta-vision-models:/home/plandelta/.paddlex
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready')",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  plandelta-agent-models:
+  plandelta-data:
+  plandelta-vision-models:
