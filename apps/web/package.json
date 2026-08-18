@@ -16,7 +16,7 @@
     "@plandelta/ui": "workspace:*",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "2.110.7",
-    "@tanstack/react-query": "^5.90.12",
+    "@tanstack/react-query": "^5.101.4",
     "dotenv": "17.2.3",
     "konva": "^10.1.0",
     "lucide-react": "^0.555.0",
