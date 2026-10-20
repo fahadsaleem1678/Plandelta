@@ -14,7 +14,7 @@ dependencies = [
   "opencv-contrib-python==4.10.0.84",
   "paddleocr>=3.0,<4",
   "paddlepaddle>=3.0,<4",
-  "pillow>=11,<13",
+  "pillow>=11,<14",
   "pydantic>=2.12,<3",
   "pymupdf>=1.25,<2",
   "uvicorn[standard]>=0.38,<1"
