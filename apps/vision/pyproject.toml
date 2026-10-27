@@ -16,7 +16,7 @@ dependencies = [
   "paddlepaddle>=3.0,<4",
   "pillow>=11,<13",
   "pydantic>=2.12,<3",
-  "pymupdf>=1.25,<2",
+  "pymupdf>=1.25,<3",
   "uvicorn[standard]>=0.38,<1"
 ]
 
